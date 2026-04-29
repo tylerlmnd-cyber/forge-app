@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="FORGE">
 <meta name="theme-color" content="#FF3D00">
 <title>FORGE — No Excuses Dashboard</title>
-<link rel="manifest" href="forge-manifest.json">
+<link rel="manifest" href="./forge-manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700&display=swap" rel="stylesheet">
 <!-- Supabase SDK — async so it never blocks app startup -->
 <script async src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -4735,7 +4735,7 @@ function init() {
 const SUPABASE_URL = 'https://yckqvlvkkczchpxiacay.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlja3F2bHZra2N6Y2hweGlhY2F5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5Nzg0NTcsImV4cCI6MjA5MjU1NDQ1N30.2MHUC15QCxmFQTFQUWjvJ5BTUnCE3a65eTH51Jc1-VI';
 
-let supabase = null;
+let supabaseClient = null;
 let currentUser = null;
 let syncTimeout = null;
 let isOfflineMode = false;
@@ -4752,7 +4752,7 @@ function initSupabase() {
       isOfflineMode = true;
       return false;
     }
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     return true;
   } catch(e) {
     console.warn('Supabase init failed:', e);
@@ -4811,10 +4811,10 @@ async function handleAuth() {
   btn.disabled = true;
 
   try {
-    if (isOfflineMode || !supabase) { continueOffline(); return; }
+    if (isOfflineMode || !supabaseClient) { continueOffline(); return; }
 
     if (authMode === 'forgot') {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
       if (error) showAuthError(error.message);
       else showAuthSuccess('Reset link sent! Check your email.');
       btn.textContent = 'SEND RESET LINK';
@@ -4826,7 +4826,7 @@ async function handleAuth() {
       const confirm = document.getElementById('auth-confirm').value;
       if (password !== confirm) { showAuthError('Passwords do not match.'); btn.textContent = 'CREATE ACCOUNT'; btn.disabled = false; return; }
       if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); btn.textContent = 'CREATE ACCOUNT'; btn.disabled = false; return; }
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
       if (error) { showAuthError(error.message); btn.textContent = 'CREATE ACCOUNT'; btn.disabled = false; return; }
       if (data.user && !data.session) {
         showAuthSuccess('Check your email to confirm your account, then sign in.');
@@ -4836,7 +4836,7 @@ async function handleAuth() {
       }
       currentUser = data.user;
     } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       if (error) { showAuthError(error.message); btn.textContent = 'SIGN IN'; btn.disabled = false; return; }
       currentUser = data.user;
     }
@@ -4897,7 +4897,7 @@ function openUserMenu() {
 }
 
 async function signOut() {
-  if (supabase) await supabase.auth.signOut();
+  if (supabaseClient) await supabaseClient.auth.signOut();
   currentUser = null;
   isOfflineMode = false;
   document.getElementById('auth-screen').style.display = 'flex';
@@ -4915,21 +4915,21 @@ function setSyncStatus(status, label) {
 }
 
 function scheduleSync() {
-  if (isOfflineMode || !currentUser || !supabase) return;
+  if (isOfflineMode || !currentUser || !supabaseClient) return;
   clearTimeout(syncTimeout);
   setSyncStatus('syncing');
   syncTimeout = setTimeout(pushToSupabase, 1500);
 }
 
 async function pushToSupabase() {
-  if (!currentUser || !supabase) return;
+  if (!currentUser || !supabaseClient) return;
   try {
     const payload = {
       user_id: currentUser.id,
       data: JSON.stringify(state),
       updated_at: new Date().toISOString()
     };
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('forge_data')
       .upsert(payload, { onConflict: 'user_id' });
     if (error) { setSyncStatus('offline', 'SYNC ERROR'); console.error('Sync error:', error); }
@@ -4940,10 +4940,10 @@ async function pushToSupabase() {
 }
 
 async function loadFromSupabase() {
-  if (!currentUser || !supabase) return;
+  if (!currentUser || !supabaseClient) return;
   try {
     setSyncStatus('syncing', 'LOADING...');
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('forge_data')
       .select('data')
       .eq('user_id', currentUser.id)
@@ -4972,7 +4972,7 @@ async function loadFromSupabase() {
 }
 
 async function forceSyncNow() {
-  if (!currentUser || !supabase) { alert('Sign in to sync.'); return; }
+  if (!currentUser || !supabaseClient) { alert('Sign in to sync.'); return; }
   await pushToSupabase();
 }
 
@@ -5031,7 +5031,7 @@ async function bootAuth() {
 
   // Supabase IS configured — check for an existing session first
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     if (session?.user) {
       // Already logged in — go straight to app and sync
       await onAuthSuccess(session.user);
@@ -5041,7 +5041,7 @@ async function bootAuth() {
     document.getElementById('auth-screen').style.display = 'flex';
 
     // Listen for future auth state changes
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         await onAuthSuccess(session.user);
       } else if (event === 'SIGNED_OUT') {
