@@ -1,0 +1,37 @@
+{
+  "name": "FORGE — No Excuses",
+  "short_name": "FORGE",
+  "description": "The AI-powered accountability app. No snooze. No excuses. Execute.",
+  "start_url": "/forge.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080A0C",
+  "theme_color": "#FF3D00",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%23080A0C'/><text x='50%' y='55%' font-family='Arial Black' font-size='110' fill='%23FF3D00' text-anchor='middle' dominant-baseline='middle'>F</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%23080A0C'/><text x='50%' y='55%' font-family='Arial Black' font-size='300' fill='%23FF3D00' text-anchor='middle' dominant-baseline='middle'>F</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "health", "fitness", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Log Workout",
+      "url": "/forge.html#fitness",
+      "description": "Jump to fitness logging"
+    },
+    {
+      "name": "Set Alarm",
+      "url": "/forge.html#alarms",
+      "description": "Set a new alarm"
+    }
+  ]
+}
